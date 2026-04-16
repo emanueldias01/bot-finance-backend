@@ -1,7 +1,8 @@
 from fastapi import FastAPI
+from api.routes.auth import router as auth_router
 
-app = FastAPI()
+app = FastAPI(
+    version="0.0.1"
+)
 
-@app.get("/ping")
-async def root():
-    return {"message" : "pong"}
+app.include_router(auth_router)
