@@ -14,15 +14,13 @@ router = APIRouter(
     tags=["Open Finance Accounts"]
 )
 
-@router.get("/not-connected")
-async def get_not_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], itemId: str | None = Query(None, alias="itemId"), type: PluggyAccountTypeEnum | None = Query(None, alias="type")):
-    if not itemId:
-        raise HTTPException(status_code=400, detail="Item ID is required")
+@router.get("/not-connected/{itemId}")
+async def get_not_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], itemId: str, type: PluggyAccountTypeEnum | None = Query(None, alias="type")):
     return await get_accounts_not_connected(itemId, type.value if type else None, db)
 
-@router.get("/connected")
-async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)]):
-    return await get_accounts_connected(db)
+@router.get("/connected/{itemId}")
+async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], itemId: str):
+    return await get_accounts_connected(db, itemId)
 
 @router.post("/")
 async def create(data: AccountRequest, db: Annotated[AsyncSession, Depends(get_session)]) -> AccountResponse:
