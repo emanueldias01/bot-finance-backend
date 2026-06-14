@@ -4,6 +4,7 @@ from api.routes.auth import router as auth_router
 from api.routes.open_finance_item import router as item_router
 from api.routes.open_finance_account import router as account_router
 from api.routes.open_finance_transactions import router as transactions_router
+from api.routes.llm_chat import router as llm_chat_router
 
 app = FastAPI(
     version="0.0.1"
@@ -21,4 +22,5 @@ app.include_router(auth_router)
 app.include_router(item_router)
 app.include_router(account_router)
 app.include_router(transactions_router)
+app.include_router(llm_chat_router)
 
