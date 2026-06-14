@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List,TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlmodel import SQLModel, Field, Relationship
@@ -19,5 +19,6 @@ class Account(SQLModel, table=True):
     balance: float = Field(nullable=False)
     type: str = Field(nullable=False)
     currency_code: str = Field(nullable=False)
+    transactions: List["Transaction"] = Relationship(back_populates="account")
 
     user: Optional["User"] = Relationship(back_populates="accounts")

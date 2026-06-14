@@ -25,4 +25,4 @@ async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session
 @router.post("/")
 async def create(data: AccountRequest, db: Annotated[AsyncSession, Depends(get_session)]) -> AccountResponse:
     return await create_account(data, db)
-
+3
