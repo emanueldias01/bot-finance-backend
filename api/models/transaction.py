@@ -1,4 +1,5 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional
 from uuid import UUID, uuid4
 from datetime import datetime
 
@@ -13,3 +14,5 @@ class Transaction(SQLModel, table=True):
     date: datetime = Field(nullable=False)
     type: str = Field(nullable=False)
     currency_code: str = Field(nullable=False)
+
+    account: Optional["Account"] = Relationship(back_populates="transactions")
