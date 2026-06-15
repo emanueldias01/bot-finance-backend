@@ -1,10 +1,10 @@
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, func
 from api.models.transaction import Transaction
 from api.models.account import Account
 from api.schemas.pluggy_transaction_response import PluggyTransactionResponse
-from api.schemas.paged_response import PagedResponseHasNext
+from api.schemas.paged_response import PagedResponseHasNext, PagedResponseFull
 from .open_finance_item import get_api_key
 import requests
 from fastapi import HTTPException
@@ -46,9 +46,27 @@ async def _return_response(transaction: List[PluggyTransactionResponse], db: Asy
     return transactions
     
 
-async def get_transactions(db: AsyncSession, account_id: str) -> List[Transaction]:
-    transactions = await db.execute(select(Transaction).where(Transaction.account_id == account_id))
-    return transactions.scalars().all()
+async def get_transactions(db: AsyncSession, user: User, page: int = 1, page_size: int = 10) -> PagedResponseFull[Transaction]:
+    count_query = select(Transaction).where(Transaction.user_id == user.id)
+    total_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
+    total = total_result.scalar()
+    
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+    
+    offset = (page - 1) * page_size
+    transactions = await db.execute(
+        select(Transaction)
+        .where(Transaction.user_id == user.id)
+        .offset(offset)
+        .limit(page_size)
+    )
+    
+    return PagedResponseFull(
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        results=transactions.scalars().all()
+    )
 
 async def get_transaction_not_synced(accountId: str, db: AsyncSession, after: str | None = None) -> PagedResponseHasNext[Transaction]:
     account: Account | None = await db.execute(select(Account).where(Account.id == accountId))
@@ -146,8 +164,9 @@ async def _get_all_transaction_not_synced(accountId: str, db: AsyncSession) -> L
     return await _return_response(all_transactions, db, accountId)
 
 
-async def sync_transactions(accountId: str, db: AsyncSession, user: User) -> List[Transaction]:
-    transactions: List[Transaction] = await _get_all_transaction_not_synced(accountId, db)
+async def sync_transactions(user_id: str, db: AsyncSession, user: User) -> List[Transaction]:
+
+    transactions: List[Transaction] = await _get_all_transaction_not_synced(user_id, db)
 
     for transaction in transactions:
         transaction.user_id = user.id
