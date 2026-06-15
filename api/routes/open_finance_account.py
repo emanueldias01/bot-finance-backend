@@ -12,18 +12,18 @@ from ..functions.security import get_current_user
 from api.models.user import User
 
 router = APIRouter(
-    prefix="/api/open-finance/accounts",
+    prefix="/open-finance/accounts",
     tags=["Open Finance Accounts"]
 )
 
 @router.get("/not-synced/")
-async def get_not_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], user: Annotated[User, Depends(get_current_user)], itemId: str, type: PluggyAccountTypeEnum | None = Query(None, alias="type")):
+async def get_not_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], itemId: str, user: User = Depends(get_current_user), type: PluggyAccountTypeEnum | None = Query(None, alias="type")):
     return await get_accounts_not_connected(itemId, type.value if type else None, db)
 
 @router.get("/synced/")
-async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], user: Annotated[User, Depends(get_current_user)], itemId: str):
-    return await get_accounts_connected(db, itemId)
+async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], itemId: str, user: User = Depends(get_current_user)):
+    return await get_accounts_connected(db, itemId, user)
 
 @router.post("/")
-async def create(data: AccountRequest, db: Annotated[AsyncSession, Depends(get_session)], user: Annotated[User, Depends(get_current_user)]) -> AccountResponse:
-    return await create_account(data, db)
+async def create(data: AccountRequest, db: Annotated[AsyncSession, Depends(get_session)], user: User = Depends(get_current_user)) -> AccountResponse:
+    return await create_account(data, db, user)

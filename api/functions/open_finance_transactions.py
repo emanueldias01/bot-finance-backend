@@ -80,11 +80,13 @@ async def get_transaction_not_synced(accountId: str, db: AsyncSession) -> List[T
         raise HTTPException(status_code=500, detail="Unknown error")
 
 
-async def sync_transactions(accountId: str, db: AsyncSession) -> List[Transaction]:
+async def sync_transactions(accountId: str, db: AsyncSession, user: User) -> List[Transaction]:
     transactions: List[Transaction] = await get_transaction_not_synced(accountId, db)
 
     for transaction in transactions:
+        transaction.user_id = user.id
         db.add(transaction)
+        
     await db.commit()
     return transactions
 

@@ -8,7 +8,7 @@ from ..functions.security import get_current_user
 from api.models.user import User
 
 router = APIRouter(
-    prefix="/api/open-finance/transactions",
+    prefix="/open-finance/transactions",
     tags=["Open Finance Transactions"]
 )
 
@@ -18,7 +18,7 @@ async def get_not_synced_transactions(db: Annotated[AsyncSession, Depends(get_se
 
 @router.post("/sync/{account_id}", response_model=List[Transaction])
 async def sync_transactions(db: Annotated[AsyncSession, Depends(get_session)], account_id: str, user: Annotated[User, Depends(get_current_user)]):
-    return await sync_transactions_function(account_id, db)
+    return await sync_transactions_function(account_id, db, user)
 
 @router.get("/synced/{account_id}", response_model=List[Transaction])
 async def get_synced_transactions(db: Annotated[AsyncSession, Depends(get_session)], account_id: str, user: Annotated[User, Depends(get_current_user)]):

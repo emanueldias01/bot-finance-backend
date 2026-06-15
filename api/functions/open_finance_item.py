@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from ..models.open_finance_connection import OpenFinanceConnection
 from fastapi import HTTPException
+from ..models.user import User
 
 load_dotenv()
 
@@ -58,14 +59,14 @@ async def connect_token():
     else:
         raise Exception(f"Error: {response.text}")
 
-async def create_item(request: OpenFinanceItemRequest, db: AsyncSession):
+async def create_item(request: OpenFinanceItemRequest, db: AsyncSession, user: User):
     connectionAlreadyExists = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.pluggy_connection_id == request.pluggy_connection_id))
     
     if connectionAlreadyExists.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Connection already exists")
     
     open_finance_connection = OpenFinanceConnection(
-        user_id=request.user_id,
+        user_id=user.id,
         pluggy_connection_id=request.pluggy_connection_id,
         institution_image_url=request.institution_image_url,
         institution_name=request.institution_name,

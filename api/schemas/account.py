@@ -16,6 +16,7 @@ class AccountResponse(BaseModel):
     balance: float
     type: str
     currency_code: str
+    user_id: UUID | None = None
 
 class AccountRequest(BaseModel):
     open_finance_connection: UUID
