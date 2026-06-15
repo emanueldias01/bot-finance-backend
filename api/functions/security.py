@@ -22,7 +22,6 @@ async def get_current_user(
 ) -> User:
 
     token = credentials.credentials
-    print(token)
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
