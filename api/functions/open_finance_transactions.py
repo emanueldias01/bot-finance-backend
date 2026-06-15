@@ -4,6 +4,7 @@ from sqlalchemy import select, insert
 from api.models.transaction import Transaction
 from api.models.account import Account
 from api.schemas.pluggy_transaction_response import PluggyTransactionResponse
+from api.schemas.paged_response import PagedResponseHasNext
 from .open_finance_item import get_api_key
 import requests
 from fastapi import HTTPException
@@ -49,7 +50,7 @@ async def get_transactions(db: AsyncSession, account_id: str) -> List[Transactio
     transactions = await db.execute(select(Transaction).where(Transaction.account_id == account_id))
     return transactions.scalars().all()
 
-async def get_transaction_not_synced(accountId: str, db: AsyncSession) -> List[Transaction]:
+async def get_transaction_not_synced(accountId: str, db: AsyncSession, after: str | None = None) -> PagedResponseHasNext[Transaction]:
     account: Account | None = await db.execute(select(Account).where(Account.id == accountId))
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -61,27 +62,92 @@ async def get_transaction_not_synced(accountId: str, db: AsyncSession) -> List[T
         os.environ["AGGREGATE_API_KEY"] = api_key
         HEADERS["X-API-KEY"] = api_key
 
-    url = f"{URL}?accountId={account.scalar_one().account_id}"
+    account_data = account.scalar_one()
+    url = f"{URL}?accountId={account_data.account_id}"
+    if after:
+        url += f"&after={after}"
 
     response = requests.get(url, headers=HEADERS)
 
     if response.status_code == 200:
-        return await _return_response(response.json()['results'], db, accountId)
+        data = response.json()
+        after_str = data.get('next').split('after=')[1] if data.get('next') else None
+        transactions = await _return_response(data['results'], db, accountId)
+        return PagedResponseHasNext(
+            has_next=data.get('next') is not None,
+            after=after_str,
+            results=transactions
+        )
     elif response.status_code == 403:
         api_key = await get_api_key()
         HEADERS["X-API-KEY"] = api_key
         os.environ["AGGREGATE_API_KEY"] = api_key
         response = requests.get(url, headers=HEADERS)
         if response.status_code == 200:
-            return await _return_response(response.json()['results'], db, accountId)
+            data = response.json()
+            transactions = await _return_response(data['results'], db, accountId)
+            after_str = data.get('next').split('after=')[1] if data.get('next') else None
+            return PagedResponseHasNext(
+                has_next=data.get('next') is not None,
+                after=after_str,
+                results=transactions
+            )
         else:
             raise HTTPException(status_code=response.status_code, detail=response.text)
     else:
         raise HTTPException(status_code=500, detail="Unknown error")
 
+async def _get_all_transaction_not_synced(accountId: str, db: AsyncSession) -> List[Transaction]:
+    account: Account | None = await db.execute(select(Account).where(Account.id == accountId))
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    if API_KEY:
+        HEADERS["X-API-KEY"] = API_KEY
+    else:
+        api_key = await get_api_key()
+        os.environ["AGGREGATE_API_KEY"] = api_key
+        HEADERS["X-API-KEY"] = api_key
+
+    account_data = account.scalar_one()
+    all_transactions = []
+    next_cursor = None
+
+    while True:
+        url = f"{URL}?accountId={account_data.account_id}"
+        if next_cursor:
+            url += f"&after={next_cursor}"
+
+        response = requests.get(url, headers=HEADERS)
+        if response.status_code == 200:
+            data = response.json()
+            all_transactions.extend(data['results'])
+            next_cursor = data.get('next')
+            
+            if not next_cursor:
+                break
+        elif response.status_code == 403:
+            api_key = await get_api_key()
+            HEADERS["X-API-KEY"] = api_key
+            os.environ["AGGREGATE_API_KEY"] = api_key
+            response = requests.get(url, headers=HEADERS)
+            if response.status_code == 200:
+                data = response.json()
+                all_transactions.extend(data['results'])
+                next_cursor = data.get('next')
+                
+                if not next_cursor:
+                    break
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+        else:
+            raise HTTPException(status_code=500, detail="Unknown error")
+
+    return await _return_response(all_transactions, db, accountId)
+
 
 async def sync_transactions(accountId: str, db: AsyncSession, user: User) -> List[Transaction]:
-    transactions: List[Transaction] = await get_transaction_not_synced(accountId, db)
+    transactions: List[Transaction] = await _get_all_transaction_not_synced(accountId, db)
 
     for transaction in transactions:
         transaction.user_id = user.id
