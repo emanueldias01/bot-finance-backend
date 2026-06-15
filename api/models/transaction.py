@@ -14,5 +14,8 @@ class Transaction(SQLModel, table=True):
     date: datetime = Field(nullable=False)
     type: str = Field(nullable=False)
     currency_code: str = Field(nullable=False)
+    user_id: UUID = Field(foreign_key="user.id")
 
+    # Relationships
     account: Optional["Account"] = Relationship(back_populates="transactions")
+    user: Optional["User"] = Relationship(back_populates="transactions")
