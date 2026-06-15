@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException
 from typing import Annotated
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+from api.database.config import get_session
 
 load_dotenv()
 
@@ -19,6 +22,7 @@ security = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_session),
 ) -> User:
 
     token = credentials.credentials
@@ -33,7 +37,8 @@ async def get_current_user(
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = await User.get(user_id)
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=401, detail="User not found")

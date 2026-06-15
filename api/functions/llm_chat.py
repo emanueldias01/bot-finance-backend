@@ -6,6 +6,12 @@ from api.models.account import Account
 from sqlalchemy import select
 from fastapi import HTTPException
 from google import genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+AI_API_KEY = os.getenv("AI_API_KEY")
 
 async def request_chat_about_account(request: ChatRequestTransactions, db: AsyncSession, user: User) -> ChatResponse:
     verify_accout = await db.execute(
@@ -15,7 +21,7 @@ async def request_chat_about_account(request: ChatRequestTransactions, db: Async
         raise HTTPException(status_code=404, detail="Account not found")
 
     result = await get_transactions(db=db, account_id=request.account_id)
-    client = genai.Client()
+    client = genai.Client(api_key=AI_API_KEY)
 
     response = client.models.generate_content(
         model="gemini-3.5-flash",
