@@ -59,6 +59,11 @@ async def connect_token():
         raise Exception(f"Error: {response.text}")
 
 async def create_item(request: OpenFinanceItemRequest, db: AsyncSession):
+    connectionAlreadyExists = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.pluggy_connection_id == request.pluggy_connection_id))
+    
+    if connectionAlreadyExists.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Connection already exists")
+    
     open_finance_connection = OpenFinanceConnection(
         user_id=request.user_id,
         pluggy_connection_id=request.pluggy_connection_id,
