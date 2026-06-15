@@ -88,8 +88,8 @@ async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSes
     else:
         raise HTTPException(status_code=res.status_code, detail=res.text)
    
-async def get_accounts_connected(db: AsyncSession, item_id: str, user: User) -> List[AccountResponse]:
-    accounts = await db.execute(select(Account).where(Account.open_finance_connection == item_id))
+async def get_accounts_connected(db: AsyncSession, user: User) -> List[AccountResponse]:
+    accounts = await db.execute(select(Account).where(Account.user_id == user.id))
     return [_map_to_response(account.__dict__) for account in accounts.scalars().all()]
 
 async def create_account(request: AccountRequest, db: AsyncSession, user: User) -> AccountResponse:
