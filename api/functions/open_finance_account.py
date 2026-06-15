@@ -4,7 +4,7 @@ from ..models.user import User
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from ..schemas.account import AccountResponse
+from ..schemas.account import AccountResponse, AccountRequest
 from ..functions.open_finance_item import get_api_key
 import requests
 from ..schemas.pluggy_account_response import PluggyAccountResponse
@@ -88,16 +88,17 @@ async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSes
     else:
         raise HTTPException(status_code=res.status_code, detail=res.text)
    
-async def get_accounts_connected(db: AsyncSession, item_id: str) -> List[AccountResponse]:
+async def get_accounts_connected(db: AsyncSession, item_id: str, user: User) -> List[AccountResponse]:
     accounts = await db.execute(select(Account).where(Account.open_finance_connection == item_id))
     return [_map_to_response(account.__dict__) for account in accounts.scalars().all()]
 
-async def create_account(request: str, db: AsyncSession) -> AccountResponse:
-    connection = db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.id == request))
+async def create_account(request: AccountRequest, db: AsyncSession, user: User) -> AccountResponse:
+    connection = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.id == request.open_finance_connection))
+    connection = connection.scalar_one_or_none()
     if not connection:
         raise HTTPException(status_code=404, detail="Connection not found")
 
-    account = Account(**request.model_dump())
+    account = Account(**request.model_dump(), user_id=user.id)
     db.add(account)
     await db.commit()
     await db.refresh(account)
