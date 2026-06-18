@@ -4,7 +4,7 @@ from api.functions.open_finance_transactions import (
     get_transaction_not_synced,
     sync_transactions as sync_transactions_function,
     update_description_in_transaction_data,
-    search_transactions
+    get_transactions_data,
 )
 from api.database.config import get_session
 from typing import Annotated, List, Optional
@@ -45,24 +45,38 @@ async def sync_transactions(
 async def get_transactions(
     db: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[User, Depends(get_current_user)],
-    account_id: Optional[str] = Query(None, description="Filtrar por uma conta específica"),
-    transaction_type: Optional[str] = Query(None, description="Filtrar por tipo (ex: credit, debit)"),
-    start_date: Optional[datetime] = Query(None, description="Data inicial do filtro (ISO format)"),
-    end_date: Optional[datetime] = Query(None, description="Data final do filtro (ISO format)"),
-    has_description: Optional[bool] = Query(False, description="Busca se a coleta tem ou não descrição"),
+    account_id: Optional[str] = Query(
+        None, description="Filtrar por uma conta específica"
+    ),
+    transaction_type: Optional[str] = Query(
+        None, description="Filtrar por tipo (ex: credit, debit)"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Data inicial do filtro (ISO format)"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="Data final do filtro (ISO format)"
+    ),
+    has_description: Optional[bool] = Query(
+        False, description="Busca transações que tem ou não descrição"
+    ),
     page: int = Query(1, ge=1, description="Número da página (mínimo 1)"),
-    size: int = Query(20, ge=1, le=100, description="Quantidade de registros por página (máximo 100)")
+    size: int = Query(
+        20, ge=1, le=100, description="Quantidade de registros por página (máximo 100)"
+    ),
 ):
-    return await search_transactions(
+    return await get_transactions_data(
         db=db,
         user=user,
         account_id=account_id,
         transaction_type=transaction_type,
         start_date=start_date,
         end_date=end_date,
+        has_description=has_description,
         page=page,
-        size=size
+        size=size,
     )
+
 
 @router.patch("/description/{id}", response_model=Transaction)
 async def update_description_in_transaction(
