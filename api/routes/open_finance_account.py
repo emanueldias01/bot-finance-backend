@@ -29,7 +29,10 @@ async def get_not_connected_accounts(
 
 
 @router.get("/synced/")
-async def get_connected_accounts(db: Annotated[AsyncSession, Depends(get_session)], user: User = Depends(get_current_user)):
+async def get_connected_accounts(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
     return await get_accounts_connected(db, user)
 
 
