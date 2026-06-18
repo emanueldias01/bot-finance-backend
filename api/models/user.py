@@ -14,6 +14,7 @@ class User(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     username: str = Field(nullable=False)
     password: str = Field(nullable=False)
+    email: str = Field(nullable=False)
 
     accounts: List["Account"] = Relationship(back_populates="user")
     transactions: List["Transaction"] = Relationship(back_populates="user")
