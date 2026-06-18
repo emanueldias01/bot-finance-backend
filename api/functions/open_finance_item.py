@@ -15,6 +15,7 @@ CLIENT_SECRET = os.getenv("AGGREGATE_CLIENT_SECRET")
 BASE_URL = os.getenv("AGGREGATE_BASE_URL")
 API_KEY = os.getenv("AGGREGATE_API_KEY")
 
+
 async def get_api_key():
     url = f"{BASE_URL}/auth"
     payload = {
@@ -22,29 +23,24 @@ async def get_api_key():
         "clientId": CLIENT_ID,
     }
 
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-    
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
     response = requests.post(url, json=payload, headers=headers)
-    
+
     if response.status_code == 200:
         return response.json().get("apiKey")
     else:
         raise Exception(f"Error: {response.text}")
 
+
 async def connect_token():
-    api_key = API_KEY or await get_api_key() 
-    
-    headers = {
-        "X-API-KEY": api_key,
-        "Content-Type": "application/json"
-    }
-    
+    api_key = API_KEY or await get_api_key()
+
+    headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+
     url = f"{BASE_URL}/connect_token"
     response = requests.post(url, headers=headers)
-    
+
     if response.status_code == 201 or response.status_code == 200:
         return response.json()
     elif response.status_code == 403:
@@ -52,19 +48,24 @@ async def connect_token():
 
         headers["X-API-KEY"] = api_key
         os.environ["AGGREGATE_API_KEY"] = api_key
-        
+
         response = requests.post(url, headers=headers)
-        
+
         return response.json()
     else:
         raise Exception(f"Error: {response.text}")
 
+
 async def create_item(request: OpenFinanceItemRequest, db: AsyncSession, user: User):
-    connectionAlreadyExists = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.pluggy_connection_id == request.pluggy_connection_id))
-    
+    connectionAlreadyExists = await db.execute(
+        select(OpenFinanceConnection).where(
+            OpenFinanceConnection.pluggy_connection_id == request.pluggy_connection_id
+        )
+    )
+
     if connectionAlreadyExists.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Connection already exists")
-    
+
     open_finance_connection = OpenFinanceConnection(
         user_id=user.id,
         pluggy_connection_id=request.pluggy_connection_id,
@@ -73,7 +74,7 @@ async def create_item(request: OpenFinanceItemRequest, db: AsyncSession, user: U
         status=request.status,
         consent_expires_at=request.consent_expires_at,
     )
-    
+
     db.add(open_finance_connection)
     await db.commit()
     await db.refresh(open_finance_connection)
@@ -84,14 +85,13 @@ async def list_items(db: AsyncSession, user: User):
     result = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.user_id == user.id))
     return [OpenFinanceItemResponse(**item.__dict__) for item in result.scalars().all()]
 
+
 async def get_item(id: str, db: AsyncSession):
-    result = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.id == id))
+    result = await db.execute(
+        select(OpenFinanceConnection).where(OpenFinanceConnection.id == id)
+    )
 
     if not result.scalar_one():
         raise HTTPException(status_code=404, detail="Open finance connection not found")
-    
+
     return OpenFinanceItemResponse(**result.scalar_one().__dict__)
-
-
-
-    

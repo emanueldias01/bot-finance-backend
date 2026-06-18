@@ -13,9 +13,15 @@ load_dotenv()
 
 AI_API_KEY = os.getenv("AI_API_KEY")
 
-async def request_chat_about_account(request: ChatRequestTransactions, db: AsyncSession, user: User) -> ChatResponse:
+
+async def request_chat_about_account(
+    request: ChatRequestTransactions, db: AsyncSession, user: User
+) -> ChatResponse:
     verify_accout = await db.execute(
-        select(User).where(User.id == user.id).join(User.accounts).where(Account.id == request.account_id)
+        select(User)
+        .where(User.id == user.id)
+        .join(User.accounts)
+        .where(Account.id == request.account_id)
     )
     if not verify_accout.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Account not found")
@@ -32,8 +38,7 @@ async def request_chat_about_account(request: ChatRequestTransactions, db: Async
         pergunta: {request.message}
         
         
-        """
+        """,
     )
 
     return ChatResponse(response=response.text)
-

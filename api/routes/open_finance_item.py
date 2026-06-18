@@ -1,5 +1,10 @@
 from fastapi import HTTPException, APIRouter
-from ..functions.open_finance_item import connect_token, create_item, list_items, get_item
+from ..functions.open_finance_item import (
+    connect_token,
+    create_item,
+    list_items,
+    get_item,
+)
 import requests
 import os
 from dotenv import load_dotenv
@@ -15,10 +20,8 @@ load_dotenv()
 
 BASE_URL = os.getenv("PLUGGY_BASE_URL")
 
-router = APIRouter(
-    prefix="/open-finance",
-    tags=["Open Finance"]
-)
+router = APIRouter(prefix="/open-finance", tags=["Open Finance"])
+
 
 @router.post("/connect-token")
 async def create_connect_token():
@@ -27,25 +30,37 @@ async def create_connect_token():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/item", response_model=OpenFinanceItemResponse)
-async def create(request: OpenFinanceItemRequest, db: Annotated[AsyncSession, Depends(get_session)], user: User = Depends(get_current_user)):
+async def create(
+    request: OpenFinanceItemRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
     try:
         return await create_item(request, db, user)
     except Exception as e:
         raise HTTPException(status_code=500)
 
+
 @router.get("/items", response_model=list[OpenFinanceItemResponse])
-async def list(db: Annotated[AsyncSession, Depends(get_session)], user: User = Depends(get_current_user)):
+async def list(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
     try:
         return await list_items(db, user)
     except Exception as e:
         raise HTTPException(status_code=500)
 
+
 @router.get("/item/{id}", response_model=OpenFinanceItemResponse)
-async def get(id: str, db: Annotated[AsyncSession, Depends(get_session)], user: User = Depends(get_current_user)):
+async def get(
+    id: str,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
     try:
         return await get_item(id, db)
     except Exception as e:
         raise HTTPException(status_code=500)
-
-
