@@ -19,28 +19,35 @@ API_KEY = os.getenv("AGGREGATE_API_KEY")
 
 URL = f"{BASE_URL}/accounts"
 
-HEADERS = {
-    "X-API-KEY": None,
-    "Content-Type": "application/json"
-}
+HEADERS = {"X-API-KEY": None, "Content-Type": "application/json"}
 
-async def _return_response(results: List[PluggyAccountResponse], db: AsyncSession) -> List[AccountResponse]:
+
+async def _return_response(
+    results: List[PluggyAccountResponse], db: AsyncSession
+) -> List[AccountResponse]:
     response: List[AccountResponse] = []
     for result in results:
-        exists = await db.execute(select(Account).where(Account.account_id == result.get("id")))
+        exists = await db.execute(
+            select(Account).where(Account.account_id == result.get("id"))
+        )
         if exists.scalar_one_or_none():
             continue
 
-        response.append(_map_to_response({
-            "id": None,
-            "open_finance_connection": None,
-            "account_id": result.get("id"),
-            "owner": result.get("owner"),
-            "balance": result.get("balance"),
-            "type": result.get("type"),
-            "currency_code": result.get("currencyCode"),
-        }))
+        response.append(
+            _map_to_response(
+                {
+                    "id": None,
+                    "open_finance_connection": None,
+                    "account_id": result.get("id"),
+                    "owner": result.get("owner"),
+                    "balance": result.get("balance"),
+                    "type": result.get("type"),
+                    "currency_code": result.get("currencyCode"),
+                }
+            )
+        )
     return response
+
 
 def _map_to_response(account: dict) -> AccountResponse:
     return AccountResponse(
@@ -53,8 +60,11 @@ def _map_to_response(account: dict) -> AccountResponse:
         currency_code=account.get("currency_code"),
     )
 
+
 async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSession):
-    op_connection: OpenFinanceConnection | None = await db.get(OpenFinanceConnection, itemId)
+    op_connection: OpenFinanceConnection | None = await db.get(
+        OpenFinanceConnection, itemId
+    )
     if not op_connection:
         raise HTTPException(status_code=404, detail="Open Finance Connection not found")
 
@@ -70,7 +80,6 @@ async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSes
         url += f"&type={type}"
     res = requests.get(url, headers=HEADERS)
 
-    
     if res.status_code == 200:
         results = res.json()["results"]
         return await _return_response(results, db)
@@ -79,7 +88,7 @@ async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSes
         HEADERS["X-API-KEY"] = api_key
         os.environ["AGGREGATE_API_KEY"] = api_key
         res = requests.get(url, headers=HEADERS)
-            
+
         if res.status_code == 200:
             results = res.json()["results"]
             return await _return_response(results, db)
@@ -87,13 +96,21 @@ async def get_accounts_not_connected(itemId: str, type: str | None, db: AsyncSes
             raise HTTPException(status_code=res.status_code, detail=res.text)
     else:
         raise HTTPException(status_code=res.status_code, detail=res.text)
-   
+
+
 async def get_accounts_connected(db: AsyncSession, user: User) -> List[AccountResponse]:
     accounts = await db.execute(select(Account).where(Account.user_id == user.id))
     return [_map_to_response(account.__dict__) for account in accounts.scalars().all()]
 
-async def create_account(request: AccountRequest, db: AsyncSession, user: User) -> AccountResponse:
-    connection = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.id == request.open_finance_connection))
+
+async def create_account(
+    request: AccountRequest, db: AsyncSession, user: User
+) -> AccountResponse:
+    connection = await db.execute(
+        select(OpenFinanceConnection).where(
+            OpenFinanceConnection.id == request.open_finance_connection
+        )
+    )
     connection = connection.scalar_one_or_none()
     if not connection:
         raise HTTPException(status_code=404, detail="Connection not found")
@@ -102,7 +119,5 @@ async def create_account(request: AccountRequest, db: AsyncSession, user: User) 
     db.add(account)
     await db.commit()
     await db.refresh(account)
-    
+
     return AccountResponse(**account.model_dump())
-    
-    
