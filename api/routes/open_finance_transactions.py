@@ -2,17 +2,18 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from api.functions.open_finance_transactions import (
     get_transaction_not_synced,
-    get_transactions,
     sync_transactions as sync_transactions_function,
     update_description_in_transaction_data,
+    get_transactions_data,
 )
 from api.database.config import get_session
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from api.models.transaction import Transaction
 from ..functions.security import get_current_user
 from api.models.user import User
 from api.schemas.paged_response import PagedResponseHasNext, PagedResponseFull
 from api.schemas.transaction import UpdateTransactionDescription
+from datetime import datetime
 
 router = APIRouter(
     prefix="/open-finance/transactions", tags=["Open Finance Transactions"]
@@ -40,14 +41,41 @@ async def sync_transactions(
     return await sync_transactions_function(account_id, db, user)
 
 
-@router.get("/synced", response_model=PagedResponseFull[Transaction])
-async def get_synced_transactions(
+@router.get("/", response_model=List[Transaction])
+async def get_transactions(
     db: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[User, Depends(get_current_user)],
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
+    account_id: Optional[str] = Query(
+        None, description="Filtrar por uma conta específica"
+    ),
+    transaction_type: Optional[str] = Query(
+        None, description="Filtrar por tipo (ex: credit, debit)"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Data inicial do filtro (ISO format)"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="Data final do filtro (ISO format)"
+    ),
+    has_description: Optional[bool] = Query(
+        False, description="Busca transações que tem ou não descrição"
+    ),
+    page: int = Query(1, ge=1, description="Número da página (mínimo 1)"),
+    size: int = Query(
+        20, ge=1, le=100, description="Quantidade de registros por página (máximo 100)"
+    ),
 ):
-    return await get_transactions(db, user, page, page_size)
+    return await get_transactions_data(
+        db=db,
+        user=user,
+        account_id=account_id,
+        transaction_type=transaction_type,
+        start_date=start_date,
+        end_date=end_date,
+        has_description=has_description,
+        page=page,
+        size=size,
+    )
 
 
 @router.patch("/description/{id}", response_model=Transaction)
