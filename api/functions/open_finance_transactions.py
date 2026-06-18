@@ -220,3 +220,21 @@ async def update_description_in_transaction_data(
     await db.commit()
 
     return transaction
+
+
+async def get_transactions_by_period(
+    db: AsyncSession,
+    user_id: str,
+    start_date: datetime,
+    end_date: datetime,
+) -> list[Transaction]:
+    statement = (
+        select(Transaction)
+        .where(Transaction.user_id == user_id)
+        .where(Transaction.date >= start_date)
+        .where(Transaction.date <= end_date)
+        .order_by(Transaction.date.desc())
+    )
+
+    result = await db.execute(statement)
+    return result.scalars().all()
