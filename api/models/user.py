@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from api.models.account import Account
     from api.models.transaction import Transaction
 
+
 class User(SQLModel, table=True):
     __tablename__ = "user"
 

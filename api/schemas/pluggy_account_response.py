@@ -1,8 +1,7 @@
-
-
 from pydantic import BaseModel
 from datetime import datetime, date
 from typing import Optional, List, Any
+
 
 class Remuneration(BaseModel):
     indexer: str
@@ -11,15 +10,18 @@ class Remuneration(BaseModel):
     preFixedRate: float
     ratePeriodicity: str
 
+
 class AvailableAmount(BaseModel):
     amount: float
     currencyCode: str
     remuneration: Remuneration
 
+
 class ReservedBalance(BaseModel):
     name: str
     identification: str
     availableAmounts: List[AvailableAmount]
+
 
 class BankData(BaseModel):
     transferNumber: str
@@ -30,6 +32,7 @@ class BankData(BaseModel):
     unarrangedOverdraftAmount: Optional[float] = None
     hasReservedBalance: bool
     reservedBalances: List[ReservedBalance]
+
 
 class CreditData(BaseModel):
     level: str
@@ -45,6 +48,7 @@ class CreditData(BaseModel):
     status: str
     disaggregatedCreditLimits: Optional[Any] = None
     additionalCards: Optional[Any] = None
+
 
 class PluggyAccountResponse(BaseModel):
     id: str

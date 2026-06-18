@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 
+
 class OpenFinanceItemRequest(BaseModel):
     user_id: UUID
     pluggy_connection_id: str
@@ -10,6 +11,7 @@ class OpenFinanceItemRequest(BaseModel):
     status: str
     last_updated_at: datetime | None = None
     consent_expires_at: datetime | None = None
+
 
 class OpenFinanceItemResponse(BaseModel):
     id: UUID
