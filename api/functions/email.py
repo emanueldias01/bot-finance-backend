@@ -60,7 +60,10 @@ async def send_emails_description_pendings():
         )
 
     if tasks:
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for res in results:
+            if isinstance(res, Exception):
+                print(f"Erro ao enviar e-mail: {res}")
 
 
 def triggers_async_job(loop):
