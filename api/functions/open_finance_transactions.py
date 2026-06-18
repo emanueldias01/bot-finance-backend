@@ -232,7 +232,6 @@ async def get_transactions_data(
     else:
         query = query.where(Transaction.description == "")
 
-
     query = query.order_by(Transaction.date.desc()).offset(offset).limit(size)
 
     try:
