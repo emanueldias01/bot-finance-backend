@@ -40,7 +40,6 @@ async def create(
     try:
         return await create_item(request, db, user)
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500)
 
 
@@ -50,7 +49,7 @@ async def list(
     user: User = Depends(get_current_user),
 ):
     try:
-        return await list_items(db)
+        return await list_items(db, user)
     except Exception as e:
         raise HTTPException(status_code=500)
 
