@@ -81,8 +81,11 @@ async def create_item(request: OpenFinanceItemRequest, db: AsyncSession, user: U
 
     return open_finance_connection
 
+
 async def list_items(db: AsyncSession, user: User):
-    result = await db.execute(select(OpenFinanceConnection).where(OpenFinanceConnection.user_id == user.id))
+    result = await db.execute(
+        select(OpenFinanceConnection).where(OpenFinanceConnection.user_id == user.id)
+    )
     return [OpenFinanceItemResponse(**item.__dict__) for item in result.scalars().all()]
 
 

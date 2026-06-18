@@ -57,4 +57,6 @@ async def update_description_in_transaction(
     db: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[User, Depends(get_current_user)],
 ):
-    return await update_description_in_transaction_data(id=id, description=data.description,db=db, user=user)
+    return await update_description_in_transaction_data(
+        id=id, description=data.description, db=db, user=user
+    )
