@@ -254,6 +254,7 @@ async def get_transactions_by_period(
     statement = (
         select(Transaction)
         .where(Transaction.user_id == user_id)
+        .where(Transaction.description != "")
         .where(Transaction.date >= start_date)
         .where(Transaction.date <= end_date)
         .order_by(Transaction.date.desc())

@@ -27,7 +27,7 @@ async def request_chat_about_account(
     if not verify_accout.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Account not found")
 
-    result = await get_transactions_data(db=db, user=user)
+    result = await get_transactions_data(db=db, user=user, has_description=True)
     client = genai.Client(api_key=AI_API_KEY)
 
     response = client.models.generate_content(
