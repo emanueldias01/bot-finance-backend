@@ -3,7 +3,7 @@ from uuid import UUID
 from datetime import datetime
 
 class OpenFinanceItemRequest(BaseModel):
-    user_id: UUID
+    user_id: UUID | None = None
     pluggy_connection_id: str
     institution_image_url: str
     institution_name: str
@@ -13,7 +13,7 @@ class OpenFinanceItemRequest(BaseModel):
 
 class OpenFinanceItemResponse(BaseModel):
     id: UUID
-    user_id: UUID
+    user_id: UUID | None = None
     pluggy_connection_id: str
     institution_image_url: str
     institution_name: str
