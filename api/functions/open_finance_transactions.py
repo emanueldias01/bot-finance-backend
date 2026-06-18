@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from api.models.transaction import Transaction
@@ -48,33 +48,6 @@ async def _return_response(
         )
 
     return transactions
-
-
-async def get_transactions(
-    db: AsyncSession, user: User, page: int = 1, page_size: int = 10
-) -> PagedResponseFull[Transaction]:
-    count_query = select(Transaction).where(Transaction.user_id == user.id)
-    total_result = await db.execute(
-        select(func.count()).select_from(count_query.subquery())
-    )
-    total = total_result.scalar()
-
-    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
-
-    offset = (page - 1) * page_size
-    transactions = await db.execute(
-        select(Transaction)
-        .where(Transaction.user_id == user.id)
-        .offset(offset)
-        .limit(page_size)
-    )
-
-    return PagedResponseFull(
-        page=page,
-        total_pages=total_pages,
-        total=total,
-        results=transactions.scalars().all(),
-    )
 
 
 async def get_transaction_not_synced(
@@ -220,6 +193,55 @@ async def update_description_in_transaction_data(
     await db.commit()
 
     return transaction
+
+async def search_transactions(
+    db: AsyncSession,
+    user: User,
+    account_id: Optional[str] = None,
+    transaction_type: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    has_description: Optional[bool] = False,
+    page: int = 1,
+    size: int = 20
+) -> List[Transaction]:
+    if page < 1:
+        page = 1
+    if size < 1 or size > 100:
+        size = 20
+        
+    offset = (page - 1) * size
+
+    query = select(Transaction).where(Transaction.user_id == user.id)
+
+    if account_id:
+        query = query.where(Transaction.account_id == account_id)
+        
+    if transaction_type:
+        query = query.where(Transaction.type == transaction_type.lower())
+        
+    if start_date:
+        query = query.where(Transaction.date >= start_date)
+        
+    if end_date:
+        query = query.where(Transaction.date <= end_date)
+    
+    if has_description:
+        query = query.where(Transaction.description != "")
+
+    query = query.order_by(Transaction.date.desc()).offset(offset).limit(size)
+
+    try:
+        result = await db.execute(query)
+        transactions = result.scalars().all()
+        return list(transactions)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Erro interno ao buscar transações."
+        )
+
 
 
 async def get_transactions_by_period(

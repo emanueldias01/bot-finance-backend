@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.functions.open_finance_transactions import get_transactions
+from api.functions.open_finance_transactions import search_transactions
 from api.schemas.chat import ChatRequestTransactions, ChatResponse
 from api.models.user import User
 from api.models.account import Account
@@ -27,7 +27,7 @@ async def request_chat_about_account(
     if not verify_accout.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Account not found")
 
-    result = await get_transactions(db=db, user=user)
+    result = await search_transactions(db=db, user=user)
     client = genai.Client(api_key=AI_API_KEY)
 
     response = client.models.generate_content(
