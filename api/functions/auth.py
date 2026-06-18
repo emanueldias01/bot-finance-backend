@@ -1,4 +1,4 @@
-from api.schemas.user import UserRequest, UserResponse
+from api.schemas.user import UserRequest, UserResponse, UserLogin
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from api.functions.security import verify_password, hash_password, create_access_token
@@ -25,7 +25,7 @@ async def register(data: UserRequest, db: AsyncSession) -> UserResponse:
     return user
 
 
-async def login(data: UserRequest, db: AsyncSession) -> TokenResponse:
+async def login(data: UserLogin, db: AsyncSession) -> TokenResponse:
     user = (
         await db.execute(select(User).where(User.username == data.username))
     ).scalar_one_or_none()
