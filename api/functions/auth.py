@@ -34,4 +34,4 @@ async def login(data: UserLogin, db: AsyncSession) -> TokenResponse:
         raise HTTPException(status_code=400, detail="Invalid email or password")
     token = create_access_token(user)
 
-    return TokenResponse(token=token)
+    return TokenResponse(token=token, email=user.email, username=user.username)
