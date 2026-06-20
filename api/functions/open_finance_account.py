@@ -8,6 +8,7 @@ from ..schemas.account import AccountResponse, AccountRequest
 from ..functions.open_finance_item import get_api_key
 import requests
 from ..schemas.pluggy_account_response import PluggyAccountResponse
+from typing import List
 
 from dotenv import load_dotenv
 import os

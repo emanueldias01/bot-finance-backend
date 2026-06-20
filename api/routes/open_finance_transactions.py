@@ -41,7 +41,7 @@ async def sync_transactions(
     return await sync_transactions_function(account_id, db, user)
 
 
-@router.get("/", response_model=List[Transaction])
+@router.get("/", response_model=PagedResponseFull[Transaction])
 async def get_transactions(
     db: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[User, Depends(get_current_user)],
@@ -58,7 +58,7 @@ async def get_transactions(
         None, description="Data final do filtro (ISO format)"
     ),
     has_description: Optional[bool] = Query(
-        False, description="Busca transações que tem ou não descrição"
+        None, description="Busca transações que tem ou não descrição"
     ),
     page: int = Query(1, ge=1, description="Número da página (mínimo 1)"),
     size: int = Query(

@@ -205,7 +205,7 @@ async def get_transactions_data(
     has_description: Optional[bool] = False,
     page: int = 1,
     size: int = 20,
-) -> List[Transaction]:
+) -> PagedResponseFull[Transaction]:
     if page < 1:
         page = 1
     if size < 1 or size > 100:
@@ -232,12 +232,40 @@ async def get_transactions_data(
     else:
         query = query.where(Transaction.description == "")
 
-    query = query.order_by(Transaction.date.desc()).offset(offset).limit(size)
+    count_query = select(func.count()).select_from(Transaction).where(Transaction.user_id == user.id)
+    
+    if account_id:
+        count_query = count_query.where(Transaction.account_id == account_id)
+
+    if transaction_type:
+        count_query = count_query.where(Transaction.type == transaction_type.lower())
+
+    if start_date:
+        count_query = count_query.where(Transaction.date >= start_date)
+
+    if end_date:
+        count_query = count_query.where(Transaction.date <= end_date)
+
+    if has_description:
+        count_query = count_query.where(Transaction.description != "")
+    else:
+        count_query = count_query.where(Transaction.description == "")
 
     try:
+        count_result = await db.execute(count_query)
+        total = count_result.scalar()
+        total_pages = (total + size - 1) // size if total > 0 else 1
+
+        query = query.order_by(Transaction.date.desc()).offset(offset).limit(size)
         result = await db.execute(query)
         transactions = result.scalars().all()
-        return list(transactions)
+        
+        return PagedResponseFull(
+            page=page,
+            total_pages=total_pages,
+            total=total,
+            results=list(transactions)
+        )
 
     except Exception as e:
         raise HTTPException(
