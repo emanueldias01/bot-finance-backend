@@ -6,6 +6,7 @@ from api.routes.open_finance_item import router as item_router
 from api.routes.open_finance_account import router as account_router
 from api.routes.open_finance_transactions import router as transactions_router
 from api.routes.llm_chat import router as llm_chat_router
+from api.routes.financial import router as financial_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from contextlib import asynccontextmanager
 from api.functions.email import trigger_pendings_job, trigger_weekly_report_job
@@ -53,3 +54,4 @@ app.include_router(item_router)
 app.include_router(account_router)
 app.include_router(transactions_router)
 app.include_router(llm_chat_router)
+app.include_router(financial_router)

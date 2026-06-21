@@ -6,6 +6,7 @@ from sqlmodel import SQLModel, Field, Relationship
 if TYPE_CHECKING:
     from api.models.account import Account
     from api.models.transaction import Transaction
+    from api.models.financial import Payable, Receivable
 
 
 class User(SQLModel, table=True):
@@ -18,3 +19,5 @@ class User(SQLModel, table=True):
 
     accounts: List["Account"] = Relationship(back_populates="user")
     transactions: List["Transaction"] = Relationship(back_populates="user")
+    payables: List["Payable"] = Relationship(back_populates="user")
+    receivables: List["Receivable"] = Relationship(back_populates="user")
