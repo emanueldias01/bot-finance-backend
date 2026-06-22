@@ -4,6 +4,7 @@ from ..functions.open_finance_item import (
     create_item,
     list_items,
     get_item,
+    unsync_item,
 )
 import requests
 import os
@@ -64,3 +65,15 @@ async def get(
         return await get_item(id, db)
     except Exception as e:
         raise HTTPException(status_code=500)
+
+@router.delete("/item/unsync/{itemId}")
+async def unsync(
+    itemId: str,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
+    try:
+        return await unsync_item(itemId, db)
+    except Exception as e:
+        raise HTTPException(status_code=500)
+

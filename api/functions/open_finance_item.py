@@ -1,12 +1,16 @@
 import os
+from re import A
 import requests
 from dotenv import load_dotenv
 from ..schemas.open_finance import OpenFinanceItemRequest, OpenFinanceItemResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, delete
 from ..models.open_finance_connection import OpenFinanceConnection
-from fastapi import HTTPException
+from ..models.transaction import Transaction
+from ..models.account import Account
 from ..models.user import User
+from fastapi import HTTPException
+from uuid import UUID
 
 load_dotenv()
 
@@ -98,3 +102,38 @@ async def get_item(id: str, db: AsyncSession):
         raise HTTPException(status_code=404, detail="Open finance connection not found")
 
     return OpenFinanceItemResponse(**result.scalar_one().__dict__)
+
+async def unsync_item(item_id: str, db: AsyncSession):
+    try:
+        connection_result = await db.execute(
+            select(OpenFinanceConnection).where(OpenFinanceConnection.id == UUID(item_id))
+        )
+        connection = connection_result.scalar_one_or_none()
+
+        if not connection:
+            raise HTTPException(status_code=404, detail="Open finance connection not found")
+
+        accounts_result = await db.execute(
+            select(Account).where(Account.open_finance_connection == connection.id)
+        )
+        accounts = accounts_result.scalars().all()
+
+        if accounts:
+            account_ids = [account.id for account in accounts]
+            await db.execute(
+                delete(Transaction).where(Transaction.account_id.in_(account_ids))
+            )
+
+        await db.execute(
+            delete(Account).where(Account.open_finance_connection == connection.id)
+        )
+
+        await db.execute(
+            delete(OpenFinanceConnection).where(OpenFinanceConnection.id == connection.id)
+        )
+
+        await db.commit()
+        return {"message": "Item unsynced successfully"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

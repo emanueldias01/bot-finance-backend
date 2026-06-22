@@ -118,6 +118,9 @@ async def resume_transactions(transactions: list[Transaction]) -> str:
 
 async def analyze_transactions_insights(db: AsyncSession, user: User) -> InsightsResponse:
     result = await get_transactions_data(db=db, user=user, has_description=True)
+    if result.total == 0:
+        return InsightsResponse(insights=[], summary="Nenhuma transação encontrada.", has_transactions=False)
+    
     client = genai.Client(api_key=AI_API_KEY)
 
     response = client.models.generate_content(
@@ -153,6 +156,7 @@ async def analyze_transactions_insights(db: AsyncSession, user: User) -> Insight
         - Máximo de 8 insights por análise
         - Priorize insights mais relevantes e impactantes
         - Dirija-se sempre ao usuário como "você"
+        - "type" deve ser "OPORTUNIDADE_DE_ECONOMIA", "RISCO_DE_FLUXO_DE_CAIXA", "PADRAO_DE_GASTOS", "DESPESA_RECORRENTE", "ALERTA" ou "SUGESTAO"
 
         Formato de resposta JSON:
         {{
@@ -182,14 +186,8 @@ async def analyze_transactions_insights(db: AsyncSession, user: User) -> Insight
     except json.JSONDecodeError:
         return InsightsResponse(
             insights=[],
+            has_transactions=False,
             summary="Não foi possível gerar insights neste momento. Tente novamente mais tarde."
-        )
-    except Exception as e:
-        print(f"Error parsing insights: {e}")
-        print(f"Response text: {response.text}")
-        return InsightsResponse(
-            insights=[],
-            summary="Não foi possível gerar insights neste momento. Haverá uma nova tentativa em breve."
         )
 
 

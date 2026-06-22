@@ -23,4 +23,12 @@ async def get_insights(
     db: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    return await analyze_transactions_insights(db=db, user=user)
+    try:
+        return await analyze_transactions_insights(db=db, user=user)
+    except Exception as e:
+        print(f"Error parsing insights: {e}")
+        return InsightsResponse(
+            insights=[],
+            has_transactions=False,
+            summary="Não foi possível gerar insights neste momento. Haverá uma nova tentativa em breve."
+        )

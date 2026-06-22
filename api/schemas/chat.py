@@ -31,3 +31,4 @@ class Insight(BaseModel):
 class InsightsResponse(BaseModel):
     insights: List[Insight]
     summary: str
+    has_transactions: bool = True
