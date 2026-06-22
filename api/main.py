@@ -44,7 +44,7 @@ app = FastAPI(lifespan=lifespan, version="0.0.1")
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=["https://frontend-botfinance.onrender.com"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
