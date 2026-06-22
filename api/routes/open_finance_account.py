@@ -5,11 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Query
 from fastapi import HTTPException
 
-from api.schemas.account import AccountRequest, AccountResponse, PluggyAccountTypeEnum
+from api.schemas.account import AccountRequest, AccountResponse, BalanceHistoryResponse, BalanceStatisticsResponse, PluggyAccountTypeEnum
 from ..functions.open_finance_account import (
     get_accounts_not_connected,
     get_accounts_connected,
     create_account,
+    get_balance_statistics,
+    get_balance_history,
 )
 from ..database.config import get_session
 from ..functions.security import get_current_user
@@ -43,3 +45,18 @@ async def create(
     user: User = Depends(get_current_user),
 ) -> AccountResponse:
     return await create_account(data, db, user)
+
+@router.get("/balance-statistics", response_model=BalanceStatisticsResponse)
+async def get_statistics_of_balance(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
+    return await get_balance_statistics(db, user)
+
+@router.get("/history-statistics", response_model=BalanceHistoryResponse)
+async def get_history_statistics(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    user: User = Depends(get_current_user),
+):
+    return await get_balance_history(db, user)
+

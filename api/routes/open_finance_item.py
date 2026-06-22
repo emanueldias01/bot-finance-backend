@@ -24,7 +24,7 @@ router = APIRouter(prefix="/open-finance", tags=["Open Finance"])
 
 
 @router.post("/connect-token")
-async def create_connect_token():
+async def create_connect_token(user: User = Depends(get_current_user)):
     try:
         return await connect_token()
     except Exception as e:

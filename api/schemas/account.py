@@ -28,3 +28,22 @@ class AccountRequest(BaseModel):
     balance: float
     type: str
     currency_code: str
+
+
+class StatisticsResponse(BaseModel):
+    month: str
+    revenues: float
+    expenses: float
+
+class BalanceStatisticsResponse(BaseModel):
+    total: float
+    statistics: StatisticsResponse
+
+class Month(BaseModel):
+    month: str
+    value: float
+
+class BalanceHistoryResponse(BaseModel):
+    revenue_months: List[Month]
+    expense_months: List[Month]
+    total: float 
