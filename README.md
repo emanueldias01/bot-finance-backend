@@ -11,3 +11,6 @@
 - Trello: https://trello.com/b/4hp22WQz/botfinance
 - Arquitetura
 <img alt="botfinance-arch" src="./docs/BotFinance-arq.drawio.png" />
+
+- Diagrama de classes
+<img alt="botfinance-class-diagram" src="./docs/diagrama-classes.png">
